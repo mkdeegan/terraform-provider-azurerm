@@ -122,7 +122,7 @@ func TestAccAzureRMLinuxVirtualMachineScaleSet_scalingInstanceCount(t *testing.T
 	})
 }
 
-func TestAccAzureRMLinuxVirtualMachineScaleSet_scalingOverProvision(t *testing.T) {
+func TestAccAzureRMLinuxVirtualMachineScaleSet_scalingOverProvisionDisabled(t *testing.T) {
 	resourceName := "azurerm_linux_virtual_machine_scale_set.test"
 	ri := tf.AccRandTimeInt()
 	location := testLocation()
@@ -133,7 +133,7 @@ func TestAccAzureRMLinuxVirtualMachineScaleSet_scalingOverProvision(t *testing.T
 		CheckDestroy: testCheckAzureRMLinuxVirtualMachineScaleSetDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAzureRMLinuxVirtualMachineScaleSet_scalingOverProvision(ri, location),
+				Config: testAccAzureRMLinuxVirtualMachineScaleSet_scalingOverProvisionDisabled(ri, location),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckAzureRMLinuxVirtualMachineScaleSetExists(resourceName),
 				),
@@ -606,7 +606,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "test" {
 `, template, rInt, instanceCount)
 }
 
-func testAccAzureRMLinuxVirtualMachineScaleSet_scalingOverProvision(rInt int, location string) string {
+func testAccAzureRMLinuxVirtualMachineScaleSet_scalingOverProvisionDisabled(rInt int, location string) string {
 	template := testAccAzureRMLinuxVirtualMachineScaleSet_template(rInt, location)
 	return fmt.Sprintf(`
 %s
@@ -619,7 +619,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "test" {
   instances            = 3
   admin_username       = "adminuser"
   admin_password       = "P@ssword1234!"
-  overprovision        = true
+  overprovision        = false
   disable_password_authentication = false
 
   source_image_reference {

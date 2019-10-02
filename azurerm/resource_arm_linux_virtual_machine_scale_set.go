@@ -137,12 +137,10 @@ func resourceArmLinuxVirtualMachineScaleSet() *schema.Resource {
 				Default:  -1,
 			},
 
-			// TODO: a test updating this
-			// TODO: in Azure this is defaulted on?
 			"overprovision": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  false,
+				Default:  true,
 			},
 
 			"plan": computeSvc.PlanSchema(),
@@ -539,9 +537,6 @@ func resourceArmLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta i
 		}
 
 		if d.HasChange("automatic_os_upgrade_policy") {
-			// TODO: `health_probe_id` is going to have to become a top-level field
-			// since it's referenced in both automatic and rolling upgrades; and both
-			// can be specified for an automatic upgrade mode
 			automaticRaw := d.Get("automatic_os_upgrade_policy").([]interface{})
 			upgradePolicy.AutomaticOSUpgradePolicy = computeSvc.ExpandVirtualMachineScaleSetAutomaticUpgradePolicy(automaticRaw)
 		}
