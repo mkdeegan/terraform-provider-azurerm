@@ -1322,9 +1322,9 @@ func VirtualMachineScaleSetScheduledEventsSchema() *schema.Schema {
 	}
 }
 
-func ExpandVirtualMachineScaleSetScheduledEvents(input []interface{}) *compute.ScheduledEventsProfile {
+func ExpandVirtualMachineScaleSetScheduledEvents(input []interface{}) compute.ScheduledEventsProfile {
 	if len(input) == 0 {
-		return &compute.ScheduledEventsProfile{}
+		return compute.ScheduledEventsProfile{}
 	}
 
 	raw := input[0].(map[string]interface{})
@@ -1332,7 +1332,7 @@ func ExpandVirtualMachineScaleSetScheduledEvents(input []interface{}) *compute.S
 	terminationVs := raw["termination_profile"].([]interface{})
 	terminationRaw := terminationVs[0].(map[string]interface{})
 
-	return &compute.ScheduledEventsProfile{
+	return compute.ScheduledEventsProfile{
 		TerminateNotificationProfile: &compute.TerminateNotificationProfile{
 			Enable:           utils.Bool(terminationRaw["enabled"].(bool)),
 			NotBeforeTimeout: utils.String(terminationRaw["not_before_timeout"].(string)),

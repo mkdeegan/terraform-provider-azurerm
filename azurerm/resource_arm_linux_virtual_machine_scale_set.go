@@ -393,9 +393,8 @@ func resourceArmLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta i
 			},
 			Secrets: secrets,
 		},
-		DiagnosticsProfile:     bootDiagnostics,
-		NetworkProfile:         networkProfile,
-		ScheduledEventsProfile: scheduledEvents,
+		DiagnosticsProfile: bootDiagnostics,
+		NetworkProfile:     networkProfile,
 		StorageProfile: &compute.VirtualMachineScaleSetStorageProfile{
 			ImageReference: sourceImageReference,
 			OsDisk:         osDisk,
@@ -405,6 +404,14 @@ func resourceArmLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta i
 
 	if adminPassword, ok := d.GetOk("admin_password"); ok {
 		virtualMachineProfile.OsProfile.AdminPassword = utils.String(adminPassword.(string))
+	}
+
+	if len(scheduledEventsRaw) > 0 {
+		if priority != compute.Regular {
+			return fmt.Errorf("`scheduled_event` can only be set when `priority` is set to `Regular`")
+		}
+
+		virtualMachineProfile.ScheduledEventsProfile = &scheduledEvents
 	}
 
 	if v, ok := d.Get("max_bid_price").(float64); ok && v > 0 {
@@ -548,8 +555,8 @@ func resourceArmLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta i
 		updateProps.UpgradePolicy = &upgradePolicy
 	}
 
+	priority := compute.VirtualMachinePriorityTypes(d.Get("priority").(string))
 	if d.HasChange("max_bid_price") {
-		priority := compute.VirtualMachinePriorityTypes(d.Get("priority").(string))
 		if priority != compute.Low {
 			return fmt.Errorf("`max_bid_price` can only be configured when `priority` is set to `Low`")
 		}
@@ -560,13 +567,16 @@ func resourceArmLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta i
 	}
 
 	if d.HasChange("scheduled_event") {
+		if priority != compute.Regular {
+			return fmt.Errorf("`scheduled_event` can only be set when `priority` is set to `Regular`")
+		}
+
 		scheduledEventsRaw := d.Get("scheduled_event").([]interface{})
 		scheduledEvents := computeSvc.ExpandVirtualMachineScaleSetScheduledEvents(scheduledEventsRaw)
-		update.VirtualMachineProfile.ScheduledEventsProfile = scheduledEvents
+		update.VirtualMachineProfile.ScheduledEventsProfile = &scheduledEvents
 	}
 
 	if d.HasChange("single_placement_group") {
-		// TODO: do we need to call `ConvertToSinglePlacementGroup` here too?
 		updateProps.SinglePlacementGroup = utils.Bool(d.Get("single_placement_group").(bool))
 	}
 
@@ -598,7 +608,6 @@ func resourceArmLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta i
 		if d.HasChange("custom_data") {
 			// customData can only be sent if it's a base64 encoded string,
 			// so it's not possible to remove this without tainting the resource
-			// TODO: we could potentially add this to a customizeDiff?
 			if v, ok := d.GetOk("custom_data"); ok {
 				osProfile.CustomData = utils.String(v.(string))
 				// TODO: if we update the customData do we need to cycle the nodes?
@@ -658,6 +667,8 @@ func resourceArmLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta i
 	}
 
 	if d.HasChange("boot_diagnostics") {
+		updateInstances = true
+
 		bootDiagnosticsRaw := d.Get("boot_diagnostics").([]interface{})
 		updateProps.VirtualMachineProfile.DiagnosticsProfile = computeSvc.ExpandVirtualMachineScaleSetBootDiagnostics(bootDiagnosticsRaw)
 	}
