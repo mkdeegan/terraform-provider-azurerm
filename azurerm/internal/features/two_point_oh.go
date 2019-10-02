@@ -1,5 +1,10 @@
 package features
 
+import (
+	"os"
+	"strings"
+)
+
 // SupportsTwoPointZeroResources returns whether the new VM and VMSS resources from 2.0
 // should be supported
 //
