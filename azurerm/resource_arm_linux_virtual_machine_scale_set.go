@@ -102,7 +102,7 @@ func resourceArmLinuxVirtualMachineScaleSet() *schema.Resource {
 			"disable_password_authentication": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  true, // TODO: check this default with Azure / raise an error if a passwords specified and no ssh keys?
+				Default:  true,
 			},
 
 			"do_not_run_extensions_on_overprovisioned_machines": {
@@ -422,7 +422,7 @@ func resourceArmLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta i
 		virtualMachineProfile.OsProfile.CustomData = utils.String(v.(string))
 	}
 
-	// TODO: confirm this in the API
+	// Azure API: "Authentication using either SSH or by user name and password must be enabled in Linux profile."
 	if disablePasswordAuthentication && virtualMachineProfile.OsProfile.AdminPassword == nil && len(sshKeys) == 0 {
 		return fmt.Errorf("At least one SSH key must be specified if `disable_password_authentication` is enabled")
 	}
