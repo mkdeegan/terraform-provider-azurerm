@@ -159,7 +159,6 @@ func resourceArmLinuxVirtualMachineScaleSet() *schema.Resource {
 			"provision_vm_agent": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				// TODO: check this default
 				Default:  true,
 				ForceNew: true,
 			},
