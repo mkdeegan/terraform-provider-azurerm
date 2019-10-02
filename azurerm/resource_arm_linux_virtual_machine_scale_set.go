@@ -606,11 +606,12 @@ func resourceArmLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta i
 		}
 
 		if d.HasChange("custom_data") {
+			updateInstances = true
+
 			// customData can only be sent if it's a base64 encoded string,
 			// so it's not possible to remove this without tainting the resource
 			if v, ok := d.GetOk("custom_data"); ok {
 				osProfile.CustomData = utils.String(v.(string))
-				// TODO: if we update the customData do we need to cycle the nodes?
 			}
 		}
 
