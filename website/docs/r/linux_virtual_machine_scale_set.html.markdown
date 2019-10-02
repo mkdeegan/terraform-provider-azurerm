@@ -158,6 +158,8 @@ The following arguments are supported:
 
 * `rolling_upgrade_policy` - (Optional) A `rolling_upgrade_policy` block as defined below. This is Required and can only be specified when `upgrade_mode` is set to `Automatic` or `Rolling`.
 
+* `scheduled_event` - (Optional) A `scheduled_event` block as defined below.
+
 * `secret` - (Optional) One or more `secret` blocks as defined below.
 
 * `single_placement_group` - (Optional) Should this Virtual Machine Scale Set be limited to a Single Placement Group, which means the number of instances will be capped at 100 Virtual Machines. Defaults to `true`.
@@ -355,6 +357,20 @@ A `rolling_upgrade_policy` block supports the following:
 * `max_unhealthy_upgraded_instance_percent` - (Required) The maximum percentage of upgraded virtual machine instances that can be found to be in an unhealthy state. This check will happen after each batch is upgraded. If this percentage is ever exceeded, the rolling update aborts. Changing this forces a new resource to be created.
 
 * `pause_time_between_batches` - (Required) The wait time between completing the update for all virtual machines in one batch and starting the next batch. The time duration should be specified in ISO 8601 format. Changing this forces a new resource to be created.
+
+---
+
+A `termination_profile` block supports the following:
+
+* `enabled` - (Required) Is the Termination Scheduled Event Enabled?
+
+* `not_before_timeout` - (Required) The ISO 8601 (e.g. `PT5M`) formatted length of time the Virtual Machine has to potentially approve the Termination Scheduled Event before the event is auto-approved.
+
+---
+
+A `scheduled_event` block supports the following:
+
+* `termination_profile` - (Required) A `termination_profile` block as defined above.
 
 ---
 

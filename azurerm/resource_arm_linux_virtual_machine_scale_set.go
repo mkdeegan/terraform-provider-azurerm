@@ -18,9 +18,6 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
 
-// TODO:
-// Termination Notifications for Low Priority VMSS: https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-terminate-notification
-// Instance Protection: https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-instance-protection
 func resourceArmLinuxVirtualMachineScaleSet() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceArmLinuxVirtualMachineScaleSetCreate,
@@ -179,6 +176,8 @@ func resourceArmLinuxVirtualMachineScaleSet() *schema.Resource {
 			},
 
 			"rolling_upgrade_policy": computeSvc.VirtualMachineScaleSetRollingUpgradePolicySchema(),
+
+			"scheduled_event": computeSvc.VirtualMachineScaleSetScheduledEventsSchema(),
 
 			"secret": {
 				Type:     schema.TypeList,
@@ -350,6 +349,9 @@ func resourceArmLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta i
 		return fmt.Errorf("A `rolling_upgrade_policy` block must be specified when `upgrade_mode` is set to %q", string(upgradeMode))
 	}
 
+	scheduledEventsRaw := d.Get("scheduled_event").([]interface{})
+	scheduledEvents := computeSvc.ExpandVirtualMachineScaleSetScheduledEvents(scheduledEventsRaw)
+
 	secretsRaw := d.Get("secret").([]interface{})
 	secrets := expandLinuxVirtualMachineScaleSetSecrets(secretsRaw)
 
@@ -394,8 +396,9 @@ func resourceArmLinuxVirtualMachineScaleSetCreate(d *schema.ResourceData, meta i
 			},
 			Secrets: secrets,
 		},
-		DiagnosticsProfile: bootDiagnostics,
-		NetworkProfile:     networkProfile,
+		DiagnosticsProfile:     bootDiagnostics,
+		NetworkProfile:         networkProfile,
+		ScheduledEventsProfile: scheduledEvents,
 		StorageProfile: &compute.VirtualMachineScaleSetStorageProfile{
 			ImageReference: sourceImageReference,
 			OsDisk:         osDisk,
@@ -560,6 +563,12 @@ func resourceArmLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta i
 		updateProps.VirtualMachineProfile.BillingProfile = &compute.BillingProfile{
 			MaxPrice: utils.Float(d.Get("max_bid_price").(float64)),
 		}
+	}
+
+	if d.HasChange("scheduled_event") {
+		scheduledEventsRaw := d.Get("scheduled_event").([]interface{})
+		scheduledEvents := computeSvc.ExpandVirtualMachineScaleSetScheduledEvents(scheduledEventsRaw)
+		update.VirtualMachineProfile.ScheduledEventsProfile = scheduledEvents
 	}
 
 	if d.HasChange("single_placement_group") {
@@ -847,6 +856,10 @@ func resourceArmLinuxVirtualMachineScaleSetRead(d *schema.ResourceData, meta int
 
 		d.Set("eviction_policy", string(profile.EvictionPolicy))
 		d.Set("priority", string(profile.Priority))
+
+		if err := d.Set("scheduled_event", computeSvc.FlattenVirtualMachineScaleSetScheduledEvents(profile.ScheduledEventsProfile)); err != nil {
+			return fmt.Errorf("Error setting `scheduled_event`: %+v", err)
+		}
 
 		if storageProfile := profile.StorageProfile; storageProfile != nil {
 			if err := d.Set("os_disk", computeSvc.FlattenVirtualMachineScaleSetOSDisk(storageProfile.OsDisk)); err != nil {

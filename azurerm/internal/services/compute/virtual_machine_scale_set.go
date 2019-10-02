@@ -1291,3 +1291,78 @@ func FlattenVirtualMachineScaleSetRollingUpgradePolicy(input *compute.RollingUpg
 		},
 	}
 }
+
+func VirtualMachineScaleSetScheduledEventsSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeList,
+		Optional: true,
+		MaxItems: 1,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"termination_profile": {
+					Type:     schema.TypeList,
+					Required: true,
+					MaxItems: 1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"enabled": {
+								Type:     schema.TypeBool,
+								Required: true,
+							},
+							"not_before_timeout": {
+								Type:         schema.TypeString,
+								Required:     true,
+								ValidateFunc: validate.ISO8601Duration,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func ExpandVirtualMachineScaleSetScheduledEvents(input []interface{}) *compute.ScheduledEventsProfile {
+	if len(input) == 0 {
+		return &compute.ScheduledEventsProfile{}
+	}
+
+	raw := input[0].(map[string]interface{})
+
+	terminationVs := raw["termination_profile"].([]interface{})
+	terminationRaw := terminationVs[0].(map[string]interface{})
+
+	return &compute.ScheduledEventsProfile{
+		TerminateNotificationProfile: &compute.TerminateNotificationProfile{
+			Enable:           utils.Bool(terminationRaw["enabled"].(bool)),
+			NotBeforeTimeout: utils.String(terminationRaw["not_before_timeout"].(string)),
+		},
+	}
+}
+
+func FlattenVirtualMachineScaleSetScheduledEvents(input *compute.ScheduledEventsProfile) []interface{} {
+	if input == nil || input.TerminateNotificationProfile == nil {
+		return []interface{}{}
+	}
+
+	enabled := false
+	if input.TerminateNotificationProfile.Enable != nil {
+		enabled = *input.TerminateNotificationProfile.Enable
+	}
+
+	notBeforeTimeout := ""
+	if input.TerminateNotificationProfile.NotBeforeTimeout != nil {
+		notBeforeTimeout = *input.TerminateNotificationProfile.NotBeforeTimeout
+	}
+
+	return []interface{}{
+		map[string]interface{}{
+			"termination_profile": []interface{}{
+				map[string]interface{}{
+					"enabled":            enabled,
+					"not_before_timeout": notBeforeTimeout,
+				},
+			},
+		},
+	}
+}
