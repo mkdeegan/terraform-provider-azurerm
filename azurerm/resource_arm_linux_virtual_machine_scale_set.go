@@ -573,7 +573,7 @@ func resourceArmLinuxVirtualMachineScaleSetUpdate(d *schema.ResourceData, meta i
 
 		scheduledEventsRaw := d.Get("scheduled_event").([]interface{})
 		scheduledEvents := computeSvc.ExpandVirtualMachineScaleSetScheduledEvents(scheduledEventsRaw)
-		update.VirtualMachineProfile.ScheduledEventsProfile = &scheduledEvents
+		updateProps.VirtualMachineProfile.ScheduledEventsProfile = &scheduledEvents
 	}
 
 	if d.HasChange("single_placement_group") {
